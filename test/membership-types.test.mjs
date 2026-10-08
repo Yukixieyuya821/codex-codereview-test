@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {Orders} from '../src/orders.mjs';import {quote} from '../src/pricing.mjs';
+for(const tier of [['gold'],{tier:'gold'},'__proto__','constructor','toString'])test('member tier must be a declared string: '+JSON.stringify(tier),()=>{const request={items:[{sku:'book',unitCents:1000,quantity:1}],memberTier:tier};const s=new Orders({book:5});assert.throws(()=>quote(request));assert.throws(()=>s.place(request,'bad'));assert.equal(s.inventory.available('book'),5);assert.equal(s.orders.size,0);});
