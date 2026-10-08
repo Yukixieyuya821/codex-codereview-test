@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {quote} from '../src/pricing.mjs';
+import {Orders} from '../src/orders.mjs';
+const req = changes => ({items:[{sku:'book',unitCents:2000,quantity:2}],shippingCents:500,...changes});
+test('gold quote ten percent',()=>assert.equal(quote(req({memberTier:'gold'})).totalCents,4100));
+test('silver quote five percent',()=>assert.equal(quote(req({memberTier:'silver'})).totalCents,4300));
+test('better coupon wins, discounts do not stack',()=>assert.equal(quote(req({memberTier:'gold',couponBps:1500})).totalCents,3900));
+test('gold discount reaches order service',()=>assert.equal(new Orders({book:9}).place(req({memberTier:'gold'}),'gold').totalCents,4100));
+test('silver discount reaches order service with tax',()=>assert.equal(new Orders({book:9}).place(req({memberTier:'silver',taxBps:1000}),'silver').totalCents,4680));
+test('unknown membership tier rejected',()=>assert.throws(()=>new Orders({book:9}).place(req({memberTier:'platinum'}),'bad')));
+test('member order retries still reserve once',()=>{const s=new Orders({book:9});const r=req({memberTier:'gold'});const a=s.place(r,'same');assert.deepEqual(s.place(r,'same'),a);assert.equal(s.inventory.available('book'),7);});

@@ -9,7 +9,7 @@ export function multiplyCents(unitCents, quantity) {
 export function rateCents(cents, basisPoints) {
   requireInteger(cents, 'cents'); requireInteger(basisPoints, 'basisPoints');
   if (basisPoints > 10000) throw new RangeError('basisPoints exceeds 10000');
-  return Math.round(cents * basisPoints / 10000);
+  return Math.floor((cents * basisPoints + 5000) / 10000);
 }
 export function sumCents(values) {
   return values.reduce((sum, value) => requireInteger(sum + requireInteger(value, 'amount'), 'sum'), 0);
