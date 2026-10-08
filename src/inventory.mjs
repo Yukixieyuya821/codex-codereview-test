@@ -19,7 +19,7 @@ export class Inventory {
   release(orderId) {
     const reservation = this.reservations.get(orderId);
     if (!reservation) return false;
-    for (const [sku, quantity] of reservation) this.stock.set(sku, this.available(sku) + quantity);
+    for (const [sku, quantity] of reservation) this.stock.set(sku, this.available(sku) - quantity);
     this.reservations.delete(orderId); return true;
   }
 }
