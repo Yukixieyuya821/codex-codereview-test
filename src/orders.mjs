@@ -1,8 +1,28 @@
-import {quote} from './pricing.mjs';
+import {quote, membershipDiscount} from './pricing.mjs';
 import {Inventory} from './inventory.mjs';
 function canonical(value) {
-  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
-  if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+  const kind = typeof value;
+  if (kind === 'symbol' || kind === 'function' || kind === 'bigint') throw new TypeError('unsupported payload type');
+  if (kind === 'number' && !Number.isFinite(value)) throw new TypeError('nonfinite numbers are not allowed');
+  if (value === undefined) return 'undefined';
+  if (value && kind === 'object') {
+    if (Object.getOwnPropertySymbols(value).length) throw new TypeError('symbol payload keys are unsupported');
+    for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+      if (Array.isArray(value) && key === 'length') continue;
+      if (!descriptor.enumerable || !('value' in descriptor)) throw new TypeError('static enumerable payload required');
+    }
+  }
+  if (Array.isArray(value)) {
+    if (Object.getPrototypeOf(value) !== Array.prototype) throw new TypeError('plain array required');
+    const keys = Object.keys(value);
+    if (keys.length !== value.length || keys.some((key, index) => key !== String(index))) throw new TypeError('dense unnamed array required');
+    return '[' + keys.map(key => canonical(value[key])).join(',') + ']';
+  }
+  if (value && kind === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) throw new TypeError('plain payload object required');
+    return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+  }
   return JSON.stringify(value);
 }
 export class Orders {
@@ -13,6 +33,7 @@ export class Orders {
   place(request, idempotencyKey) {
     if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) throw new TypeError('idempotency key required');
     const fingerprint = canonical(request);
+    request = {...request, couponBps: membershipDiscount(request)};
     const previous = this.requests.get(idempotencyKey);
     if (previous) {
       if (previous.fingerprint !== fingerprint) throw new Error('idempotency key payload mismatch');
