@@ -1,9 +1,16 @@
 import {quote} from './pricing.mjs';
 import {Inventory} from './inventory.mjs';
 function canonical(value) {
-  if (typeof value === 'number' && !Number.isFinite(value)) throw new TypeError('nonfinite numbers are not allowed');
+  const kind = typeof value;
+  if (kind === 'symbol' || kind === 'function' || kind === 'bigint') throw new TypeError('unsupported payload type');
+  if (kind === 'number' && !Number.isFinite(value)) throw new TypeError('nonfinite numbers are not allowed');
+  if (value === undefined) return 'undefined';
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
-  if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+  if (value && kind === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) throw new TypeError('plain payload object required');
+    return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+  }
   return JSON.stringify(value);
 }
 export class Orders {
