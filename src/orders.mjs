@@ -13,9 +13,10 @@ function canonical(value) {
     }
   }
   if (Array.isArray(value)) {
+    if (Object.getPrototypeOf(value) !== Array.prototype) throw new TypeError('plain array required');
     const keys = Object.keys(value);
     if (keys.length !== value.length || keys.some((key, index) => key !== String(index))) throw new TypeError('dense unnamed array required');
-    return '[' + value.map(canonical).join(',') + ']';
+    return '[' + keys.map(key => canonical(value[key])).join(',') + ']';
   }
   if (value && kind === 'object') {
     const prototype = Object.getPrototypeOf(value);
