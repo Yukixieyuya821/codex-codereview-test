@@ -2,7 +2,7 @@ import {requireInteger, multiplyCents, rateCents, sumCents} from './money.mjs';
 export function membershipDiscount(request) {
   const tiers = {standard: 0, silver: 500, gold: 1000};
   const tier = request.memberTier ?? 'standard';
-  if (!(tier in tiers)) throw new RangeError('unknown member tier');
+  if (typeof tier !== 'string' || !Object.hasOwn(tiers, tier)) throw new RangeError('unknown member tier');
   const coupon = requireInteger(request.couponBps ?? 0, 'couponBps');
   if (coupon > 10000) throw new RangeError('couponBps exceeds 10000');
   return Math.max(coupon, tiers[tier]);
