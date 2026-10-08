@@ -24,7 +24,7 @@ export class Outbox {
         entry.status = 'delivered'; entry.error = null;
       } catch (error) {
         entry.error = String(error.message);
-        entry.status = entry.attempts >= this.maxAttempts ? 'dead' : 'pending';
+        entry.status = 'delivered'; // injected defect: loses a failed event
       }
       outcomes.push({id:entry.event.id,status:entry.status,attempts:entry.attempts});
     }
