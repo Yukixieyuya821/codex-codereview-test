@@ -65,6 +65,13 @@ export class Orders {
     if (order.state !== 'reserved') throw new Error('invalid payment state');
     order.state = 'paid'; return structuredClone(order);
   }
+  ship(orderId) {
+    const order = this.orders.get(orderId);
+    if (!order) throw new Error('unknown order');
+    if (order.state === 'shipped') return structuredClone(order);
+    if (order.state !== 'paid') throw new Error('order must be paid before shipment');
+    order.state = 'shipped'; return structuredClone(order);
+  }
   cancel(orderId) {
     const order = this.orders.get(orderId);
     if (!order) throw new Error('unknown order');
