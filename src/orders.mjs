@@ -1,4 +1,4 @@
-import {quote} from './pricing.mjs';
+import {quote, membershipDiscount} from './pricing.mjs';
 import {Inventory} from './inventory.mjs';
 function canonical(value) {
   const kind = typeof value;
@@ -33,6 +33,7 @@ export class Orders {
   place(request, idempotencyKey) {
     if (typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) throw new TypeError('idempotency key required');
     const fingerprint = canonical(request);
+    request = {...request, couponBps: membershipDiscount(request)};
     const previous = this.requests.get(idempotencyKey);
     if (previous) {
       if (previous.fingerprint !== fingerprint) throw new Error('idempotency key payload mismatch');
