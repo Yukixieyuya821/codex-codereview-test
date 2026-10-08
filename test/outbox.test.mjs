@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Outbox} from '../src/outbox.mjs';
+const event = changes => ({id:'event-1',orderId:'ORD-1',kind:'order-created',...changes});
+test('outbox rejects empty id',()=>assert.throws(()=>new Outbox().enqueue(event({id:''}))));
+test('outbox exact duplicate is ignored',()=>{const b=new Outbox();assert.equal(b.enqueue(event()),true);assert.equal(b.enqueue(event()),false);assert.equal(b.entries.size,1);});
+test('outbox changed payload under same id rejected',()=>{const b=new Outbox();b.enqueue(event());assert.throws(()=>b.enqueue(event({kind:'order-cancelled'})));});
+test('different events on same order both retained',()=>{const b=new Outbox();b.enqueue(event());b.enqueue(event({id:'event-2',kind:'order-paid'}));assert.equal(b.entries.size,2);});
+test('outbox successful event runs only once',async()=>{const b=new Outbox();b.enqueue(event());let count=0;await b.drain(async()=>count++);await b.drain(async()=>count++);assert.equal(count,1);});
+test('failed handler remains pending and retries',async()=>{const b=new Outbox();b.enqueue(event());await b.drain(async()=>{throw new Error('down');});assert.equal(b.entries.get('event-1').status,'pending');await b.drain(async()=>{});assert.equal(b.entries.get('event-1').status,'delivered');assert.equal(b.entries.get('event-1').attempts,2);});
+test('dead letter stops after configured limit',async()=>{const b=new Outbox(2);b.enqueue(event());for(let i=0;i<3;i++)await b.drain(async()=>{throw new Error('down');});assert.equal(b.entries.get('event-1').status,'dead');assert.equal(b.entries.get('event-1').attempts,2);});
+test('handler cannot alter queued event',async()=>{const b=new Outbox();b.enqueue(event());await b.drain(async payload=>{payload.orderId='wrong';});assert.equal(b.entries.get('event-1').event.orderId,'ORD-1');});
