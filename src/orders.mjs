@@ -5,7 +5,18 @@ function canonical(value) {
   if (kind === 'symbol' || kind === 'function' || kind === 'bigint') throw new TypeError('unsupported payload type');
   if (kind === 'number' && !Number.isFinite(value)) throw new TypeError('nonfinite numbers are not allowed');
   if (value === undefined) return 'undefined';
-  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+  if (value && kind === 'object') {
+    if (Object.getOwnPropertySymbols(value).length) throw new TypeError('symbol payload keys are unsupported');
+    for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+      if (Array.isArray(value) && key === 'length') continue;
+      if (!descriptor.enumerable || !('value' in descriptor)) throw new TypeError('static enumerable payload required');
+    }
+  }
+  if (Array.isArray(value)) {
+    const keys = Object.keys(value);
+    if (keys.length !== value.length || keys.some((key, index) => key !== String(index))) throw new TypeError('dense unnamed array required');
+    return '[' + value.map(canonical).join(',') + ']';
+  }
   if (value && kind === 'object') {
     const prototype = Object.getPrototypeOf(value);
     if (prototype !== Object.prototype && prototype !== null) throw new TypeError('plain payload object required');
