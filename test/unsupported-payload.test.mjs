@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {Orders} from '../src/orders.mjs';
+const req=changes=>({items:[{sku:'book',unitCents:1000,quantity:1}],...changes});
+for(const field of ['taxBps','couponBps','shippingCents','memberTier'])test('unsupported symbol/function cannot replay undefined '+field,()=>{const s=new Orders({book:5});s.place(req({[field]:undefined}),'same');assert.throws(()=>s.place(req({[field]:Symbol('invalid')}),'same'));assert.throws(()=>s.place(req({[field]:()=>0}),'same'));assert.equal(s.inventory.available('book'),4);});
+test('nonplain object payload cannot replay plain metadata',()=>{const s=new Orders({book:5});s.place(req({metadata:{}}),'same');assert.throws(()=>s.place(req({metadata:new Date(0)}),'same'));assert.equal(s.inventory.available('book'),4);});
