@@ -23,7 +23,13 @@ export class Orders {
     // A failed request must not consume an idempotency key or order ID.
     // Returned values are detached from persisted state.
     const id = 'ORD-' + this.nextId;
-    const priced = quote(request);
+    const normalized = {
+      items: request.items,
+      couponBps: request.couponBps,
+      taxBps: request.taxBps,
+      shippingCents: request.shippingCents
+    };
+    const priced = quote(normalized);
     this.inventory.reserve(id, priced.lines);
     const order = {id, state: 'reserved', ...priced};
     this.orders.set(id, order);
