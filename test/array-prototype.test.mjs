@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {Orders} from '../src/orders.mjs';
+test('custom array prototype cannot override fingerprint iteration',()=>{class Hidden extends Array{map(){return [];}}const req=metadata=>({items:[{sku:'book',unitCents:1000,quantity:1}],metadata});const s=new Orders({book:5});s.place(req([]),'same');assert.throws(()=>s.place(req(new Hidden('changed')),'same'));assert.equal(s.inventory.available('book'),4);});
