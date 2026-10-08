@@ -1,0 +1,7 @@
+# Order service validation requirements
+
+All amounts are integer cents; rates are basis points (0..10000). Multiply quantities safely, reject unsafe integer totals, and calculate percentage amounts with exact integer intermediate products and nearest-cent rounding (halves up). Coupon/member discount applies to subtotal BEFORE tax; shipping is added afterwards. Gold is 10%, silver 5%, standard zero. Use the better of coupon and member discounts; do not stack them. Direct quotes AND placed orders must preserve member benefits and reject unknown tiers.
+
+Inventory aggregates duplicate SKUs and checks all lines before any mutation. Failed orders change neither inventory, stored orders, idempotency keys nor sequence. Identical requests under the same key return the same detached order without another reservation; different payloads under the same key are rejected. Cancel reserved orders restores inventory exactly once. Paid cancellation requires manual refund; do not invent automatic refund rules. Returned data must not mutate stored state.
+
+Target branch code is context, not blanket authority to change business contracts. No editing tests, requirements or validation config to obtain passing checks. No private configuration, credentials, network, MCP, .git writes, commits or push from the AI. The trusted controller does these operations. Feature branches must not receive the whole test branch or unrelated fulfillment code.
