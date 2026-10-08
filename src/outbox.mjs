@@ -1,5 +1,5 @@
 export class Outbox {
-  constructor(maxAttempts = 3) {
+  constructor(maxAttempts = 5) {
     if (!Number.isInteger(maxAttempts) || maxAttempts < 1) throw new RangeError('maxAttempts');
     this.maxAttempts = maxAttempts; this.entries = new Map();
   }
@@ -24,7 +24,7 @@ export class Outbox {
         entry.status = 'delivered'; entry.error = null;
       } catch (error) {
         entry.error = String(error.message);
-        entry.status = 'delivered'; // injected defect: loses a failed event
+        entry.status = entry.attempts >= this.maxAttempts ? 'dead' : 'pending';
       }
       outcomes.push({id:entry.event.id,status:entry.status,attempts:entry.attempts});
     }
